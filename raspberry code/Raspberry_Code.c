@@ -1,5 +1,8 @@
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
+#include "tusb.h"
+#include <string.h>
+
 
 int main() {
     //outputs pins
@@ -8,8 +11,12 @@ int main() {
     const uint Serwo_PIN_3 = 18;
     const uint Serwo_PIN_4 = 20;
 
+    uint16_t PIN_1_angle = 0;
+    uint16_t PIN_2_angle = 0;
+    uint16_t PIN_3_angle = 0;
+    uint16_t PIN_4_angle = 0;
 
-    //TODO change to better range adjusted to servo's
+
     //duty (0-100%)
     uint16_t PIN_1_Duty_Percent = 1;
     uint16_t PIN_2_Duty_Percent = 25;
@@ -58,18 +65,39 @@ int main() {
     pwm_set_enabled(slice4, true);
 
 
-
-
+    //activate USB communication
+    stdio_init_all();
   
+    //buffer for data from USB
+    char buffer[128];
+
 
     while (true) {
-    //TODO change PIN_x_Duty_Percent from usb reveived commands
+    //read data from USB
+    while (tud_cdc_available() > 0) {
+        if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+            buffer[strcspn(buffer, "\r\n")] = 0;
+        }    
+   
+        if (strlen(buffer) > 0) {
+            int parsed_count = sscanf(buffer, "%d,%d,%d,%d", &PIN_1_angle, &PIN_2_angle, &PIN_3_angle, &PIN_4_angle);
+        }
+    }
+    
+    
+    //TODO add calculation of duty value specified to each servo
+    PIN_1_Duty_Percent = (PIN_1_angle*100)/360;
+    PIN_2_Duty_Percent = (PIN_2_angle*100)/360;
+    PIN_3_Duty_Percent = (PIN_3_angle*100)/360;
+    PIN_4_Duty_Percent = (PIN_4_angle*100)/360;
+
 
 
     uint16_t PIN_1_Duty_Value = counterMax * PIN_1_Duty_Percent/100;
     uint16_t PIN_2_Duty_Value = counterMax * PIN_2_Duty_Percent/100;
     uint16_t PIN_3_Duty_Value = counterMax * PIN_3_Duty_Percent/100;
     uint16_t PIN_4_Duty_Value = counterMax * PIN_4_Duty_Percent/100;
+
 
 
     pwm_set_gpio_level(Serwo_PIN_1, PIN_1_Duty_Value);
@@ -79,6 +107,12 @@ int main() {
 
 
     sleep_ms(10);
+
+
+
+
+
+
 
     }
 }
