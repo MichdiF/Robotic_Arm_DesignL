@@ -117,7 +117,57 @@ class MainWindow(QMainWindow):
     buttons.addWidget(self.home_btn)
     buttons.addWidget(self.stop_btn)
     left.addLayout(buttons)
-    
+
+    self.log = QPlainTextEdit()
+    self.log.setReadOnly(True)
+    self.log.setMaximumBlockCount(256)
+    left.addWidget(self.log, 1)
+
+    right = QVBoxLayout()
+    root.addLayout(right, 2)
+    cam_box = QGroupBox("Camera")
+    cam_layout = QVBoxLayout(cam_box)
+    self.cam_label = QLabel("No image")
+    self.cam_label.setAlignment(Qt.AlignCenter)
+    self.cam_label.setMinimumSize(CAM_WIDTH, CAM_HEIGHT)
+    self.cam_label.setStyleSheet("background-color: #222; color: #aaa;")
+    cam_layout.addWidget(self.cam_label)
+    right.addWidget(cam_box)
+    right.addStretch(1)
+    self.set_controls_enabled(False)
+
+  def set_controls_enabled(self, enabled: bool):
+    for w in (self.send_btn, self.home_btn, self.stop_btn):
+      w.setEnabled(enabled)
+
+  def refresh_ports(self):
+    self.port_combo.clear()
+    for info in QSerialPortInfo.availablePorts():
+      self.port_combo.addItem(f"{info.portName()} – {info.description()}", info.portName())
+
+  def toggle_connection(self):
+    if self.serial.isOpen():
+      self.serial.close()
+      self.connect_btn.setText("Connect")
+      self.set_controls_enabled(False)
+      self.log_msg("Disconnected")
+      return
+
+    name = self.port_combo.currentData()
+    if not name:
+      self.log_msg("No port selecetd")
+      return
+
+    self.serial.setPortName(name)
+    self.serial.setBaudRate(BAUDRATE)
+    if self.serial.open(QIODevice.OpenModeFlag.ReadWrite):
+      self.connect_btn.setText("Disconnect")
+      self.set_controls_enabled(True)
+      self.log_msg(f"Connected with {name}")
+    else:
+      self.log_msg(f"Failed to connect with port: {self.serial.errorString()}")
+      
+    	  
     
     
     
