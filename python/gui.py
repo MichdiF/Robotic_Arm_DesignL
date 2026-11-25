@@ -166,6 +166,23 @@ class MainWindow(QMainWindow):
       self.log_msg(f"Connected with {name}")
     else:
       self.log_msg(f"Failed to connect with port: {self.serial.errorString()}")
+
+  def send_line(self, text: str):
+    if nor self.serial.isOpen():
+      return
+    self.serial.write((text + "\n").encode("ascii"))
+    self.log_msg(f">> {text}")
+
+  def send_angles(self):
+    angles = [row.value() for row in self.rows]
+    self.send_line(",".join(str(a) for a in angles))
+
+  def on_axis_changed(self):
+    if self.live_check.isChecked() and self.serial.isOpen():
+      self.send_timer.start()
+
+  def on_ready_read(self):
+    
       
     	  
     
