@@ -182,6 +182,46 @@ class MainWindow(QMainWindow):
       self.send_timer.start()
 
   def on_ready_read(self):
+    while self.serial.canReadLine():
+      line = bytes(self.serial.readLine()).decode("utf-8", errors="replace").strip()
+      if line:
+        self.handle_line_from_pico(line)
+
+  def handle_line_from_pico(self, line: str):
+        self.log_msg(f"< {line}")
+
+  def on_serial_error(self, error):
+    if error != QSerialPort.SerialPortError.NoError:
+      self.log_msg(f"Błąd portu: {self.serial.errorString()}")
+      if error == QSerialPort.SerialPortError.ResourceError:
+        self.serial.close()
+        self.connect_btn.setText("Connect")
+        self.set_controls_enabled(False)
+
+  def show_frame(self, data: bytes, width: int = CAM_WIDTH, height = CAM_HEIGHT):
+    if len(data) != width*height:
+      self.log_msg(f"Bad frame size: {len(data)} B")
+      return
+    img = QImage(data, width, height, width, QImage.Format.Format_Grayscale8)
+    self.cam_label.setPixmap(QPixmap.fromImage(img.copy()))
+
+  def log_msg(self, text: str)
+    self.log.appendPlainText(text)
+
+  def closeEvent(self, event):
+    if self.serial.isOpen():
+      self.serial.close()
+    super().closeEvent(event)
+
+def main():
+  app = QApplication(sys.argv)
+  window = MainWindow()
+  window.show()
+  sys.ecit(app.exec())
+
+if __name__ == "__main__":
+  main()
+
     
       
     	  
